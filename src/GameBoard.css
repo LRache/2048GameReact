@@ -5,25 +5,4 @@
     background-color: #bbada0;
 
     margin-top: 20px;
-
-    display: grid;
-    grid-template-rows: repeat(4, 1fr);
-    grid-template-columns: repeat(4, 1fr);
 }
-
-.game-block {
-    width: 100px;
-    height: 100px;
-    border-radius: 6px;
-
-    margin: 10px;
-
-    background-color: #CDC1B4;
-
-    text-align: center;
-    line-height: 100px;
-    font-size: xx-large;
-
-    user-select: none;
-}
-
