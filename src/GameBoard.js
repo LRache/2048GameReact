@@ -1,54 +1,139 @@
 import "./GameBoard.css"
-import {useEffect} from "react";
+import GameBlock from "./GameBlock"
+import {SpawnAnimationBlock} from "./GameBlock";
+import {useEffect, useState} from "react";
 
-const margin = 20
-const blockSize = 100
-
-const blockBasicStyles = {
-    width:  blockSize + "px",
-    height: blockSize + "px",
-    borderRadius: "6px",
-
-    textAlign: "center",
-    lineHeight: "100px",
-    userSelect: "none",
-
-    position: "absolute",
+function random_int(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
 }
 
-const BlockStyle ={
-    0: {textColor: ""       , backgroundColor: "#CDC1B4"},
-    2: {textColor: "#776E65", backgroundColor: "#EEE4DA"},
-    4: {textColor: "#F9F6F2", backgroundColor: "#EDE0C8"}
+let numbers = Array(16).fill(0)
+function random_spawn_number() {
+    let t = random_int(0, 16)
+    while (numbers[t] !== 0) {
+        t = random_int(0, 16)
+    }
+    numbers[t] = Math.pow(2, random_int(1, 3))
+    return t
 }
 
-function genBlockStyle(number, loc) {
-    const row = Math.floor(loc / 4)
-    const col = loc % 4
-    return {
-        ...blockBasicStyles,
-        ...BlockStyle[number],
-        top: margin + row * (margin + blockSize)
+let isMerged = Array(16).fill(false)
+let spawnAnimation = []
+let moveAnimation = []
+function move_init() {
+    isMerged = Array(16).fill(false)
+    spawnAnimation = []
+    moveAnimation = []
+}
+
+function try_merge(fr, fc, tr, tc) {
+    if (isMerged[tr * 4 + tc]) {
+        return 0
+    }
+    if (numbers[fr * 4 + fc] === numbers[tr * 4 + tc]) {
+        numbers[tr * 4 + tc] *= 2
+        numbers[fr * 4 + fc] = 0
+        isMerged[tr * 4 + tc] = true
+        return numbers[tr * 4 + tc] *= 2
+    } else {
+        return 0
     }
 }
 
-function GameBlock({number, loc}) {
-    return (
-        <div style={genBlockStyle(number, loc)}>
-            {number === 0 ? "" : number}
-        </div>
-    )
+function move_number(fr, fc, tr, tc) {
+    if (fr === tr && fc === tc) {return}
+    numbers[tr * 4 + tc] = numbers[fr * 4 + fc]
+    numbers[fr * 4 + fc] = 0
 }
 
-function GameBoard({numbers, spawnAnimation}) {
-    const blocks = numbers.map(n => <GameBlock number={n} loc={n}/>)
+function move_up() {
+    move_init()
+
+    let incScore = 0
+    for (let row = 1; row < 4; row++) {
+        for (let col = 0; col < 4; col++) {
+            if (numbers[row * 4 + col] === 0) { continue }
+
+            let tr = row - 1
+            while (tr >= 0 && numbers[tr * 4 + col] === 0) { tr-- }
+
+            if (tr === -1) {
+                move_number(row, col, 0, col)
+            } else {
+                let s = try_merge(row, col, tr, col)
+                if (s === 0) {
+                    tr ++
+                    move_number(row, col, tr + 1, col)
+                } else (
+                    incScore += s
+                )
+            }
+        }
+    }
+    return incScore
+}
+
+function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}) {
+    const [numberState, setNumberState] = useState(Array(16).fill(0))
+    const [spawnNumberAnimationArray, setSpawnNumberAnimationArray] = useState([])
+    let score = initScore
+
+    function new_game() {
+        numbers = Array(16).fill(0)
+        const t = []
+        t.push(random_spawn_number())
+        t.push(random_spawn_number())
+        setNumberState(numbers)
+        setSpawnNumberAnimationArray(t)
+        onSetScore(0)
+        score = 0
+    }
+
+    function handleKeyDown(event) {
+        if (event.key === "ArrowUp") {
+            move_up()
+            setNumberState(numbers)
+            console.log(numbers)
+        }
+    }
+
+    useEffect(() =>{
+        new_game()
+        document.addEventListener("keydown", handleKeyDown, false)
+        return ()=>{
+            document.removeEventListener("keydown", handleKeyDown, false)
+        }
+    }, [])
 
     useEffect(() => {
+        if (newGameTriggerred) {
+            new_game()
+        }
+        onNewGameFinished()
+    }, [newGameTriggerred])
 
-    }, [spawnAnimation]);
+    const blocks = numberState.map(
+        (n, index) => <GameBlock
+            number = {n}
+            index  = {index}
+            key    = {"block" + index}
+        />
+    )
+
+    spawnNumberAnimationArray.forEach((a) => {blocks.push(
+        <SpawnAnimationBlock
+            number = {numberState[a]}
+            index  = {a}
+            key    = {"spawnAnimationBlock" + a}
+            onExited={() => {
+                let t = spawnNumberAnimationArray.filter((x) => x !== a)
+                setSpawnNumberAnimationArray(t)
+            }}
+        />
+    )})
 
     return (
-        <div className="game-board">
+        <div className="game-board" onKeyDown={handleKeyDown}>
             {blocks}
         </div>
     )
