@@ -2,6 +2,7 @@ import "./GameBoard.css"
 import GameBlock from "./GameBlock"
 import {SpawnAnimationBlock} from "./GameBlock";
 import {useEffect, useState} from "react";
+import {render} from "@testing-library/react";
 
 function random_int(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
@@ -133,7 +134,7 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}
     )})
 
     return (
-        <div className="game-board" onKeyDown={handleKeyDown}>
+        <div className="game-board">
             {blocks}
         </div>
     )
