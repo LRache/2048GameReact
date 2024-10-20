@@ -7,14 +7,3 @@
     margin-top: 20px;
     position: relative;
 }
-
-.block-spawn-enter{
-    opacity: 1;
-    transform: scale(1);
-}
-
-.block-spawn-enter-active{
-    opacity: 1;
-    transform: scale(1.1);
-    transition: all 0.5s;
-}

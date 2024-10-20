@@ -1,8 +1,7 @@
 import "./GameBoard.css"
-import GameBlock from "./GameBlock"
+import GameBlock, {MoveAnimationBlock} from "./GameBlock"
 import {SpawnAnimationBlock} from "./GameBlock";
 import {useEffect, useState} from "react";
-import {render} from "@testing-library/react";
 
 function random_int(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
@@ -35,7 +34,7 @@ function try_merge(fr, fc, tr, tc) {
         numbers[tr * 4 + tc] *= 2
         numbers[fr * 4 + fc] = 0
         isMerged[tr * 4 + tc] = true
-        return numbers[tr * 4 + tc] *= 2
+        return numbers[tr * 4 + tc]
     } else {
         return 0
     }
@@ -45,10 +44,18 @@ function move_number(fr, fc, tr, tc) {
     if (fr === tr && fc === tc) {return}
     numbers[tr * 4 + tc] = numbers[fr * 4 + fc]
     numbers[fr * 4 + fc] = 0
+    spawnAnimation.push({
+        n: numbers[tr * 4 + tc],
+        fr: fr,
+        fc: fc,
+        tr: tr,
+        tc: tc,
+    })
 }
 
 function move_up() {
     move_init()
+    let moved = false
 
     let incScore = 0
     for (let row = 1; row < 4; row++) {
@@ -60,23 +67,29 @@ function move_up() {
 
             if (tr === -1) {
                 move_number(row, col, 0, col)
+                moved = true
             } else {
                 let s = try_merge(row, col, tr, col)
                 if (s === 0) {
                     tr ++
-                    move_number(row, col, tr + 1, col)
-                } else (
+                    if (tr !== row) {
+                        move_number(row, col, tr + 1, col)
+                        moved = true
+                    }
+                } else {
                     incScore += s
-                )
+                    moved = true
+                }
             }
         }
     }
-    return incScore
+    return [moved, incScore]
 }
 
 function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}) {
     const [numberState, setNumberState] = useState(Array(16).fill(0))
-    const [spawnNumberAnimationArray, setSpawnNumberAnimationArray] = useState([])
+    const [moveAnimationArray, setMoveAnimationArray] = useState([])
+    const [spawnAnimationArray, setSpawnAnimationArray] = useState([])
     let score = initScore
 
     function new_game() {
@@ -85,16 +98,20 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}
         t.push(random_spawn_number())
         t.push(random_spawn_number())
         setNumberState(numbers)
-        setSpawnNumberAnimationArray(t)
+        setSpawnAnimationArray(t)
         onSetScore(0)
         score = 0
+    }
+
+    function trigger_move_animation() {
+        setMoveAnimationArray(moveAnimationArray.slice())
     }
 
     function handleKeyDown(event) {
         if (event.key === "ArrowUp") {
             move_up()
-            setNumberState(numbers)
-            console.log(numbers)
+            setNumberState(numbers.slice())
+            trigger_move_animation()
         }
     }
 
@@ -121,21 +138,40 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}
         />
     )
 
-    spawnNumberAnimationArray.forEach((a) => {blocks.push(
-        <SpawnAnimationBlock
-            number = {numberState[a]}
-            index  = {a}
-            key    = {"spawnAnimationBlock" + a}
-            onExited={() => {
-                let t = spawnNumberAnimationArray.filter((x) => x !== a)
-                setSpawnNumberAnimationArray(t)
-            }}
-        />
-    )})
+    const spawnBlocks = []
+    spawnAnimationArray.forEach((a) => {
+        spawnBlocks.push(
+            <SpawnAnimationBlock
+                number = {numberState[a]}
+                index  = {a}
+                key    = {"spawnAnimationBlock" + a}
+                onExited={() => {
+                    let t = spawnAnimationArray.filter((x) => x !== a)
+                    setSpawnAnimationArray(t)
+                }}
+            />
+        )}
+    )
+
+    const moveBlocks = []
+    moveAnimationArray.forEach((a) => {
+        moveBlocks.push(
+            <MoveAnimationBlock
+                number = {a.n}
+                fr = {a.fr}
+                fc = {a.fc}
+                tr = {a.tr}
+                tc = {a.tc}
+                key = {"moveAnimationBlock" + a.fr + a.fc}
+            />
+        )
+    })
 
     return (
         <div className="game-board">
             {blocks}
+            {spawnBlocks}
+            {moveBlocks}
         </div>
     )
 }

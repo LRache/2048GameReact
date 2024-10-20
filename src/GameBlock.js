@@ -28,8 +28,7 @@ function get_row_and_col_from_index(index) {
     return [Math.floor(index / 4), index % 4]
 }
 
-function gen_block_style(number, index) {
-    const [row, col] = get_row_and_col_from_index(index)
+function gen_block_style(number, row, col) {
     return {
         ...blockBasicStyle,
         ...BlockStyle[number],
@@ -40,28 +39,48 @@ function gen_block_style(number, index) {
     }
 }
 
-function gen_block_spawn_animation_style(number, index) {
+function gen_spawn_animation_style(number, index) {
+    const [row, col] = get_row_and_col_from_index(index)
+    const blockStyle= gen_block_style(number, row, col)
     return {
         entering: {
             ...BlockTransitionStyle,
-            ...gen_block_style(number, index),
+            ...blockStyle,
             transform: "scale(1.05)",
         },
         entered:  {
             ...BlockTransitionStyle,
-            ...gen_block_style(number, index),
+            ...blockStyle,
             transform: "scale(1.05)",
         },
         exiting: {
             ...BlockTransitionStyle,
-            ...gen_block_style(number, index),
+            ...blockStyle,
             transform: "scale(1)",
         },
         exited: {
             ...BlockTransitionStyle,
-            ...gen_block_style(number, index),
+            ...blockStyle,
             transform: "scale(1)",
         },
+    }
+}
+
+function gen_move_animation_style(number, fr, fc, tr, tc) {
+    const dc = tc - fc
+    const dr = tr - fr
+    const dx = (dc - 1) * BlockSize + dc * Margin
+    const dy = (dr - 1) * BlockSize + dr * Margin
+    const blockStyle= gen_block_style(number, fr, fc)
+    const s = {
+        ...BlockTransitionStyle,
+        ...blockStyle,
+        transform: `translateX(${dx}px) translateY(${dy}px)`,
+    }
+
+    return {
+        exiting: s,
+        exited:  s,
     }
 }
 
@@ -69,7 +88,7 @@ function GameBlock({number, index}) {
     const text = number === 0 ? "" : number
 
     return (
-        <div style={gen_block_style(number, index)}>
+        <div style={gen_block_style(number, ...get_row_and_col_from_index(index))}>
             {text}
         </div>
     )
@@ -93,12 +112,37 @@ export function SpawnAnimationBlock({number, index, onExited}) {
                 return (
                     <div
                         ref={nodeRef}
-                        style={gen_block_spawn_animation_style(number, index)[state]}
+                        style={gen_spawn_animation_style(number, index)[state]}
                     >
                         {number}
                     </div>
                 )
             }}
+        </Transition>
+    )
+}
+
+export function MoveAnimationBlock({number, fr, fc, tr, tc}) {
+    const nodeRef = useRef(null)
+
+    return (
+        <Transition
+            in={false}
+            nodeRef={nodeRef}
+            timeout={1000}
+            enter={false}
+            onExited={() => {console.log("Exited")}}
+            unmountOnExit
+            appear
+        >
+            {state => (
+                <div
+                    ref={nodeRef}
+                    style={gen_move_animation_style(number, fr, fc, tr, tc)[state]}
+                >
+                    {number}
+                </div>
+            )}
         </Transition>
     )
 }
