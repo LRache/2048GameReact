@@ -14,18 +14,16 @@ const blockBasicStyle = {
     fontSize: "40px",
 }
 
-const BlockTransitionStyle = {
-    transition: "all 100ms linear"
-}
-
 const BlockStyle ={
-    0: {textColor: ""       , backgroundColor: "#CDC1B4"},
-    2: {textColor: "#776E65", backgroundColor: "#EEE4DA"},
-    4: {textColor: "#F9F6F2", backgroundColor: "#EDE0C8"}
+    0:  {color: ""       , backgroundColor: "#CDC1B4"},
+    2:  {color: "#776E65", backgroundColor: "#EEE4DA"},
+    4:  {color: "#776E65", backgroundColor: "#EDE0C8"},
+    8:  {color: "#F9F6F2", backgroundColor: "#F2B179"},
+    16: {color: "#F9F6F2", backgroundColor: "#FFFFFF"},
 }
 
-function get_row_and_col_from_index(index) {
-    return [Math.floor(index / 4), index % 4]
+function get_position(t) {
+    return Margin + t * (Margin * 2 + BlockSize)
 }
 
 function gen_block_style(number, row, col) {
@@ -34,32 +32,25 @@ function gen_block_style(number, row, col) {
         ...BlockStyle[number],
         width:  BlockSize + "px",
         height: BlockSize + "px",
-        top:  Margin + row * (Margin * 2 + BlockSize),
-        left: Margin + col * (Margin * 2 + BlockSize),
+        top:  get_position(row),
+        left: get_position(col),
     }
 }
 
-function gen_spawn_animation_style(number, index) {
-    const [row, col] = get_row_and_col_from_index(index)
+function gen_spawn_animation_style(number, row, col) {
     const blockStyle= gen_block_style(number, row, col)
+    const transitionStyle = {
+        transition: "all 150ms linear"
+    }
     return {
-        entering: {
-            ...BlockTransitionStyle,
+        0: blockStyle,
+        1: {
+            ...transitionStyle,
             ...blockStyle,
             transform: "scale(1.05)",
         },
-        entered:  {
-            ...BlockTransitionStyle,
-            ...blockStyle,
-            transform: "scale(1.05)",
-        },
-        exiting: {
-            ...BlockTransitionStyle,
-            ...blockStyle,
-            transform: "scale(1)",
-        },
-        exited: {
-            ...BlockTransitionStyle,
+        2: {
+            ...transitionStyle,
             ...blockStyle,
             transform: "scale(1)",
         },
@@ -67,83 +58,67 @@ function gen_spawn_animation_style(number, index) {
 }
 
 function gen_move_animation_style(number, fr, fc, tr, tc) {
-    const dc = tc - fc
-    const dr = tr - fr
-    const dx = (dc - 1) * BlockSize + dc * Margin
-    const dy = (dr - 1) * BlockSize + dr * Margin
-    const blockStyle= gen_block_style(number, fr, fc)
-    const s = {
-        ...BlockTransitionStyle,
-        ...blockStyle,
-        transform: `translateX(${dx}px) translateY(${dy}px)`,
+    const start = {
+        ...gen_block_style(number, fr, fc),
+        // transition: "all 1s linear 0s",
+    }
+    const end = {
+        ...gen_block_style(number, tr, tc),
+        transition: "all 200ms linear 0s",
     }
 
-    return {
-        exiting: s,
-        exited:  s,
-    }
+    return [start, end]
 }
 
-function GameBlock({number, index}) {
+function GameBlock({number, row, col}) {
     const text = number === 0 ? "" : number
 
     return (
-        <div style={gen_block_style(number, ...get_row_and_col_from_index(index))}>
+        <div style={gen_block_style(number, row, col)}>
             {text}
         </div>
     )
 }
 
-export function SpawnAnimationBlock({number, index, onExited}) {
-    const [inProp, setInProp] = useState(true)
-    const nodeRef = useRef(null)
+export function SpawnAnimationBlock({number, row, col, onEnd}) {
+    const [state, setState] = useState(0)
+    const styles = gen_spawn_animation_style(number, row, col)
+    console.log("Paint spawn animation")
+
+    useEffect(() => {
+        setState(1)
+        setTimeout(() => {setState(2)}, 100)
+        setTimeout(() => {onEnd()}, 200)
+    }, [])
+
+    if (number === 0) {
+        return (
+            <div style={gen_block_style(0, row, col)}>
+                {number}
+            </div>
+        )
+    }
 
     return (
-        <Transition
-            in={inProp}
-            nodeRef={nodeRef}
-            timeout={100}
-            onEntered={() => setInProp(false)}
-            onExited={onExited}
-            unmountOnExit
-            appear
-        >
-            {state => {
-                return (
-                    <div
-                        ref={nodeRef}
-                        style={gen_spawn_animation_style(number, index)[state]}
-                    >
-                        {number}
-                    </div>
-                )
-            }}
-        </Transition>
+        <div style={styles[state]}>
+            {number}
+        </div>
     )
 }
 
-export function MoveAnimationBlock({number, fr, fc, tr, tc}) {
-    const nodeRef = useRef(null)
+export function MoveAnimationBlock({number, fr, fc, tr, tc, onEnd}) {
+    const [active, setActive] = useState(false)
+    const [startStyle, endStyle] = gen_move_animation_style(number, fr, fc, tr, tc)
+
+    useEffect(() => {
+        setTimeout(() => {onEnd()}, 150)
+        setActive(true)
+    }, [])
 
     return (
-        <Transition
-            in={false}
-            nodeRef={nodeRef}
-            timeout={1000}
-            enter={false}
-            onExited={() => {console.log("Exited")}}
-            unmountOnExit
-            appear
-        >
-            {state => (
-                <div
-                    ref={nodeRef}
-                    style={gen_move_animation_style(number, fr, fc, tr, tc)[state]}
-                >
-                    {number}
-                </div>
-            )}
-        </Transition>
+        <div style={active ? endStyle : startStyle}>
+            {number}
+        </div>
     )
 }
 
