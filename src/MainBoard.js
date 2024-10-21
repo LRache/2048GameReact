@@ -20,9 +20,7 @@ function MainBoard() {
     
     function handleSetScore(newScore) {
         setScore(newScore)
-        if (newScore > bestScore) {
-            setBestScore(newScore)
-        }
+        setBestScore((prev) => prev < newScore ? newScore : prev)
     }
 
     return (

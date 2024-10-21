@@ -1,5 +1,4 @@
-import {useRef, useState, useEffect} from "react";
-import {Transition} from "react-transition-group";
+import {useState, useEffect} from "react";
 
 const Margin = 10
 const BlockSize = 100
@@ -14,12 +13,17 @@ const blockBasicStyle = {
     fontSize: "40px",
 }
 
-const BlockStyle ={
-    0:  {color: ""       , backgroundColor: "#CDC1B4"},
-    2:  {color: "#776E65", backgroundColor: "#EEE4DA"},
-    4:  {color: "#776E65", backgroundColor: "#EDE0C8"},
-    8:  {color: "#F9F6F2", backgroundColor: "#F2B179"},
-    16: {color: "#F9F6F2", backgroundColor: "#FFFFFF"},
+const BlockDefaultStyle ={
+    0: {color: ""       , backgroundColor: "#CDC1B4"},
+    2: {color: "#776E65", backgroundColor: "#EEE4DA"},
+    4: {color: "#776E65", backgroundColor: "#EDE0C8"},
+    8: {color: "#F9F6F2", backgroundColor: "#F2B179"},
+    16: {color: "#F9F6F2", backgroundColor: "#F59563"},
+    32: {color: "#F9F6F2", backgroundColor: "#F67C5F"},
+    64: {color: "#F9F6F2", backgroundColor: "#F65E3B"},
+    128: {color: "#F9F6F2", backgroundColor: "#EDCF72"},
+    256: {color: "#F9F6F2", backgroundColor: "#EDCC61"},
+    512: {color: "#F9F6F2", backgroundColor: "#EDC850"},
 }
 
 function get_position(t) {
@@ -29,7 +33,7 @@ function get_position(t) {
 function gen_block_style(number, row, col) {
     return {
         ...blockBasicStyle,
-        ...BlockStyle[number],
+        ...BlockDefaultStyle[number],
         width:  BlockSize + "px",
         height: BlockSize + "px",
         top:  get_position(row),
@@ -40,14 +44,14 @@ function gen_block_style(number, row, col) {
 function gen_spawn_animation_style(number, row, col) {
     const blockStyle= gen_block_style(number, row, col)
     const transitionStyle = {
-        transition: "all 150ms linear"
+        transition: "all 120ms ease-in-out"
     }
     return {
         0: blockStyle,
         1: {
             ...transitionStyle,
             ...blockStyle,
-            transform: "scale(1.05)",
+            transform: "scale(1.02)",
         },
         2: {
             ...transitionStyle,
@@ -60,11 +64,10 @@ function gen_spawn_animation_style(number, row, col) {
 function gen_move_animation_style(number, fr, fc, tr, tc) {
     const start = {
         ...gen_block_style(number, fr, fc),
-        // transition: "all 1s linear 0s",
     }
     const end = {
         ...gen_block_style(number, tr, tc),
-        transition: "all 200ms linear 0s",
+        transition: "all 150ms ease-in-out",
     }
 
     return [start, end]
@@ -83,12 +86,11 @@ function GameBlock({number, row, col}) {
 export function SpawnAnimationBlock({number, row, col, onEnd}) {
     const [state, setState] = useState(0)
     const styles = gen_spawn_animation_style(number, row, col)
-    console.log("Paint spawn animation")
 
     useEffect(() => {
         setState(1)
-        setTimeout(() => {setState(2)}, 100)
-        setTimeout(() => {onEnd()}, 200)
+        setTimeout(() => {setState(2)}, 120)
+        setTimeout(() => {onEnd()}, 240)
     }, [])
 
     if (number === 0) {

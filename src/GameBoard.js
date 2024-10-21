@@ -39,6 +39,17 @@ function try_merge(fr, fc, tr, tc) {
         return 0
     }
     if (numbers[fr][fc] === numbers[tr][tc]) {
+        moveAnimation.push({
+            n: numbers[fr][fc],
+            fr: fr,
+            fc: fc,
+            tr: tr,
+            tc: tc
+        })
+        spawnAnimationReady.push({
+            row: tr,
+            col: tc,
+        })
         numbers[tr][tc] *= 2
         numbers[fr][fc] = 0
         isMerged[tr][tc] = true
@@ -63,7 +74,6 @@ function move_number(fr, fc, tr, tc) {
 function move_up() {
     move_init()
     let moved = false
-
     let incScore = 0
     for (let row = 1; row < 4; row++) {
         for (let col = 0; col < 4; col++) {
@@ -90,7 +100,114 @@ function move_up() {
             }
         }
     }
-    console.log(numbers)
+    if (moved) {
+        spawnAnimationReady.push(random_spawn_number())
+    }
+    return [moved, incScore]
+}
+
+function move_down() {
+    move_init()
+    let moved = false
+    let incScore = 0
+    for (let row = 2; row >= 0; row--) {
+        for (let col = 0; col < 4; col++) {
+            if (numbers[row][col] === 0) { continue }
+
+            let tr = row + 1
+            while (tr < 4 && numbers[tr][col] === 0) { tr++ }
+
+            if (tr === 4) {
+                move_number(row, col, 3, col)
+                moved = true
+            } else {
+                const s = try_merge(row, col, tr, col)
+                if (s === 0) {
+                    tr --;
+                    if (tr !== row) {
+                        move_number(row, col, tr, col)
+                        moved = true
+                    }
+                } else {
+                    incScore += s
+                    moved = true
+                }
+            }
+        }
+    }
+    if (moved) {
+        spawnAnimationReady.push(random_spawn_number())
+    }
+    return [moved, incScore]
+}
+
+function move_left() {
+    move_init()
+    let moved = false
+    let incScore = 0
+    for (let col = 1; col < 4; col++) {
+        for (let row = 0; row < 4; row++) {
+            if (numbers[row][col] === 0) { continue }
+
+            let tc = col - 1
+            while (tc >= 0 && numbers[row][tc] === 0) { tc-- }
+
+            if (tc === -1) {
+                move_number(row, col, row, 0)
+                moved = true
+            } else {
+                const s = try_merge(row, col, row, tc)
+                if (s === 0) {
+                    tc ++
+                    if (tc !== col) {
+                        move_number(row, col, row, tc)
+                        moved = true
+                    }
+                } else {
+                    incScore += s
+                    moved = true
+                }
+            }
+        }
+    }
+    if (moved) {
+        spawnAnimationReady.push(random_spawn_number())
+    }
+    return [moved, incScore]
+}
+
+function move_right() {
+    move_init()
+    let moved = false
+    let incScore = 0
+    for (let col = 2; col >= 0; col--) {
+        for (let row = 0; row < 4; row++) {
+            if (numbers[row][col] === 0) { continue }
+
+            let tc = col + 1
+            while (tc < 4 && numbers[row][tc] === 0) { tc++ }
+
+            if (tc === 4) {
+                move_number(row, col, row, 3)
+                moved = true
+            } else {
+                const s = try_merge(row, col, row, tc)
+                if (s === 0) {
+                    tc --
+                    if (tc !== col) {
+                        move_number(row, col, row, tc)
+                        moved = true
+                    }
+                } else {
+                    incScore += s
+                    moved = true
+                }
+            }
+        }
+    }
+    if (moved) {
+        spawnAnimationReady.push(random_spawn_number())
+    }
     return [moved, incScore]
 }
 
@@ -102,10 +219,27 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}
     // for elements key
     const moveCount = useRef(0)
     const spawnCount = useRef(0)
+    const moveAnimationActive = useRef(false)
+    const score = useRef(initScore)
+    const undoStack = useRef([])
+
+    function setScore(newScore) {
+        score.current = newScore
+        onSetScore(newScore)
+    }
 
     function trigger_spawn_animation() {
         spawnCount.current++
-        setSpawnAnimationArray(spawnAnimationReady.slice())
+        setBoard((prev) => {
+            const next = structuredClone(board)
+            spawnAnimationReady.forEach((x) => {
+                next[x.row][x.col] = numbers[x.row][x.col]
+            })
+            // console.log(next)
+            return next
+        })
+        // setBoard(numbers)
+        // setSpawnAnimationArray(spawnAnimationReady.slice())
     }
 
     function trigger_move_animation() {
@@ -117,46 +251,71 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}
             })
             return next
         })
+        moveAnimationActive.current = true
         setMoveAnimationArray(moveAnimation.slice())
+    }
+
+    function stop_animation() {
+        setMoveAnimationArray((_) => [])
+        setSpawnAnimationArray((_) => [])
+        setBoard(structuredClone(numbers))
     }
 
     function new_game() {
         numbers = gen_clean_board()
         const t = []
-        // t.push(random_spawn_number())
-        // t.push(random_spawn_number())
-        t.push({row: 1, col: 0})
-        t.push({row: 1, col: 1})
-        t.push({row: 1, col: 2})
-        t.push({row: 1, col: 3})
-        t.push({row: 2, col: 0})
-        t.push({row: 2, col: 1})
-        t.push({row: 2, col: 2})
-        t.push({row: 2, col: 3})
-        t.push({row: 3, col: 0})
-        t.push({row: 3, col: 1})
-        t.push({row: 3, col: 2})
-        t.push({row: 3, col: 3})
-        for (let i = 0; i < 4; i++) {
-            numbers[1][i] = 2
-        }
-        for (let i = 0; i < 4; i++) {
-            numbers[2][i] = 4
-        }
-        for (let i = 0; i < 4; i++) {
-            numbers[3][i] = 8
-        }
+        t.push(random_spawn_number())
+        t.push(random_spawn_number())
+        // for (let i = 0; i < 4; i++) {
+        //     numbers[0][i] = 2
+        //     t.push({row: 0, col: i})
+        // }
+        // for (let i = 0; i < 4; i++) {
+        //     numbers[1][i] = 2
+        //     t.push({row: 1, col: i})
+        // }
+        // for (let i = 0; i < 4; i++) {
+        //     numbers[2][i] = 2
+        //     t.push({row: 2, col: i})
+        // }
+        // for (let i = 0; i < 4; i++) {
+        //     numbers[3][i] = 2
+        //     t.push({row: 3, col: i})
+        // }
         spawnAnimationReady = t;
         trigger_spawn_animation()
 
         setBoard(gen_clean_board())
-        onSetScore(0)
+        undoStack.current = []
+        setScore(0)
     }
 
     function handleKeyDown(event) {
-        if (event.key === "ArrowUp") {
-            move_up()
-            trigger_move_animation()
+        const mapMove = new Map([
+            ["ArrowUp"   , move_up],
+            ["ArrowDown" , move_down],
+            ["ArrowLeft" , move_left],
+            ["ArrowRight", move_right],
+        ])
+        if (["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+            const oldBoard = structuredClone(numbers)
+            const oldScore = score.current
+
+            stop_animation()
+            const [moved, incScore] = mapMove.get(event.key)()
+            if (moved) {
+                undoStack.current.push([oldBoard, oldScore])
+                if (undoStack.current.length === 65) undoStack.current = undoStack.current.slice(1, 65)
+                trigger_move_animation()
+            }
+            setScore(score.current + incScore)
+        } else if (event.key === "z") {
+            if (undoStack.current.length !== 0) {
+                const [oldBoard, oldScore] = undoStack.current.pop()
+                setBoard((_) => oldBoard)
+                numbers = oldBoard
+                setScore(oldScore)
+            }
         }
     }
 
@@ -176,6 +335,7 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}
     }, [newGameTriggerred])
 
     const blocks = []
+    // console.log("BOARD", board)
     board.forEach((row, rowIndex) => {
         row.forEach((number, colIndex) => {
             blocks.push(
@@ -190,15 +350,14 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}
     })
 
     function handleSpawnAnimationEnd(row, col) {
-        setBoard((prev) => {
-            const next = structuredClone(prev)
-            next[row][col] = numbers[row][col]
-            return next
-        })
         setSpawnAnimationArray((prev) => {
-            console.log(prev)
             return prev.filter((x) => (x.row !== row && x.col !== col))
         })
+        // setBoard((prev) => {
+        //     const next = structuredClone(prev)
+        //     next[row][col] = numbers[row][col]
+        //     return next
+        // })
     }
 
     const spawnBlocks = []
@@ -225,6 +384,13 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}
         setMoveAnimationArray((array) => array.filter((x) => (x.fr !== fr && x.fc !== fc)))
     }
 
+    useEffect(() => {
+        if (moveAnimationActive && moveAnimationArray.length === 0) {
+            moveAnimationActive.current = false
+            trigger_spawn_animation()
+        }
+    }, [moveAnimationArray])
+
     const moveBlocks = []
     moveAnimationArray.forEach((a) => {
         const key = "MoveAnimationBlock" + moveCount.current + a.fr + a.fc
@@ -244,8 +410,8 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore, initScore}
     return (
         <div className="game-board">
             {blocks}
-            {spawnBlocks}
             {moveBlocks}
+            {spawnBlocks}
         </div>
     )
 }
