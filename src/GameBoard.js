@@ -349,29 +349,23 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
     const touchDownY = useRef(0)
 
     function handleTouchStart(event) {
-        event.preventDefault()
         const firstTouch = event.touches[0]
         touchDownX.current = firstTouch.clientX
         touchDownY.current = firstTouch.clientY
-        console.log("MoveStart")
     }
 
     function handleTouchMove(event) {
-        event.preventDefault()
     }
 
     function handleTouchEnd(event) {
-        event.preventDefault()
-        const barrier = 100
+        const barrier = 150
         const firstTouch = event.changedTouches[0]
-        console.log("END")
         const touchUpX = firstTouch.clientX
         const touchUpY = firstTouch.clientY
         const dx = touchUpX - touchDownX.current
         const dy = touchUpY - touchDownY.current
         const absdx = Math.abs(dx)
         const absdy = Math.abs(dy)
-        console.log(absdx)
         if (absdx > absdy) {
             if (absdx > barrier) {
                 if (dx > 0) {
