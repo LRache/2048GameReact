@@ -211,6 +211,10 @@ function move_right() {
     return [moved, incScore]
 }
 
+function is_game_end() {
+    return false
+}
+
 function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
     const [board, setBoard] = useState(gen_clean_board()) // The numbers that truly paint on the website
     const [moveAnimationArray, setMoveAnimationArray] = useState([])
