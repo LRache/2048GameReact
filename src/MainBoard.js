@@ -1,6 +1,6 @@
 import "./MainBoard.css"
 import {ScoreLabel} from "./ScoreLabel"
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import NewGameButton from "./NewGameButton";
 import GameBoard from "./GameBoard";
 
@@ -23,6 +23,26 @@ function MainBoard() {
         setBestScore((prev) => prev < newScore ? newScore : prev)
     }
 
+    useEffect(() => {
+        function handleBeforeUnload() {
+            window.localStorage.setItem("2048GameBest", bestScore.toString())
+        }
+
+        window.addEventListener("beforeunload", handleBeforeUnload)
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload)
+        }
+    }, [bestScore])
+
+    useEffect(() => {
+        const l = window.localStorage.getItem("2048GameBest")
+        let bs = 0
+        if (l !== null) {
+            bs = parseInt(l)
+        }
+        setBestScore(bs)
+    }, [])
+
     return (
         <div className="mainBoard">
             <div className="topBox">
@@ -37,6 +57,9 @@ function MainBoard() {
                 onNewGameFinished={handleNewGameFinished}
                 onSetScore={handleSetScore}
             />
+            <div className="bottomNote">
+                2048Game demo by <i>Freedom</i>
+            </div>
         </div>
     )
 }

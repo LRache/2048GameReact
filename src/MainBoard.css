@@ -14,7 +14,7 @@
     float: left;
     text-align: left;
     font-size: 56px;
-    font-family: "Consolas", "Courier New", monospace;
+    font-family: "Yu Gothic UI", "Courier New", monospace;
     font-weight: bold;
     margin-right: auto;
     color: #766e66;
@@ -31,32 +31,38 @@
     text-align: center;
     padding: 5px 10px 2px 10px;
     margin: 5px;
-    min-width: 60px;
+    min-width: 80px;
 }
 
 .scoreLabelText {
-    font-family: "Consolas", "Courier New", monospace;
+    font-family: "Yu Gothic UI", "Courier New", monospace;
     font-weight: bold;
     color: #ece4db;
     margin: 0 auto;
 }
 
 .scoreLabelNumber {
-    font-family: "Consolas", "Courier New", monospace;
+    font-family: "Yu Gothic UI", "Courier New", monospace;
     font-weight: bold;
-    font-size: 1.5em;
+    font-size: 20px;
     color: white;
     margin: 0 auto;
 }
 
 .newGameButton {
-    font-family: "Consolas", "Courier New", monospace;
+    font-family: "Yu Gothic UI", "Courier New", monospace;
     font-weight: bold;
-    font-size: 1.2em;
+    font-size: 20px;
     color: white;
     padding: 10px 15px;
     background-color: #8c7b68;
     float: right;
     border: none;
     border-radius: 5px;
+}
+
+.bottomNote {
+    font-family: "Consolas", "Courier New", monospace;
+    margin-top: 20px;
+    text-align: center;
 }
