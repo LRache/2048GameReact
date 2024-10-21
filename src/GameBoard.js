@@ -362,7 +362,7 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
     }
 
     function handleTouchEnd(event) {
-        const barrier = 150
+        const barrier = 75
         const firstTouch = event.changedTouches[0]
         const touchUpX = firstTouch.clientX
         const touchUpY = firstTouch.clientY
