@@ -307,6 +307,20 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
         setScore(0)
     }
 
+    function do_move(moveFun) {
+        const oldBoard = structuredClone(numbers)
+        const oldScore = score.current
+
+        stop_animation()
+        const [moved, incScore] = moveFun()
+        if (moved) {
+            undoStack.current.push([oldBoard, oldScore])
+            if (undoStack.current.length === 1025) undoStack.current = undoStack.current.slice(1, 1025)
+            trigger_move_animation()
+        }
+        setScore(score.current + incScore)
+    }
+
     function handleKeyDown(event) {
         const mapMove = new Map([
             ["ArrowUp"   , move_up   ],
@@ -320,23 +334,59 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
         ])
         const keys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "s", "a", "d"]
         if (keys.includes(event.key)) {
-            const oldBoard = structuredClone(numbers)
-            const oldScore = score.current
-
-            stop_animation()
-            const [moved, incScore] = mapMove.get(event.key)()
-            if (moved) {
-                undoStack.current.push([oldBoard, oldScore])
-                if (undoStack.current.length === 1025) undoStack.current = undoStack.current.slice(1, 1025)
-                trigger_move_animation()
-            }
-            setScore(score.current + incScore)
+            do_move(mapMove.get(event.key))
         } else if (event.key === "z") {
             if (undoStack.current.length !== 0) {
                 const [oldBoard, oldScore] = undoStack.current.pop()
                 setBoard((_) => oldBoard)
                 numbers = oldBoard
                 setScore(oldScore)
+            }
+        }
+    }
+
+    const touchDownX = useRef(0)
+    const touchDownY = useRef(0)
+
+    function handleTouchStart(event) {
+        event.preventDefault()
+        const firstTouch = event.touches[0]
+        touchDownX.current = firstTouch.clientX
+        touchDownY.current = firstTouch.clientY
+        console.log("MoveStart")
+    }
+
+    function handleTouchMove(event) {
+        event.preventDefault()
+    }
+
+    function handleTouchEnd(event) {
+        event.preventDefault()
+        const barrier = 100
+        const firstTouch = event.changedTouches[0]
+        console.log("END")
+        const touchUpX = firstTouch.clientX
+        const touchUpY = firstTouch.clientY
+        const dx = touchUpX - touchDownX.current
+        const dy = touchUpY - touchDownY.current
+        const absdx = Math.abs(dx)
+        const absdy = Math.abs(dy)
+        console.log(absdx)
+        if (absdx > absdy) {
+            if (absdx > barrier) {
+                if (dx > 0) {
+                    do_move(move_right)
+                } else {
+                    do_move(move_left)
+                }
+            }
+        } else {
+            if (absdy > barrier) {
+                if (dy > 0) {
+                    do_move(move_down)
+                } else {
+                    do_move(move_up)
+                }
             }
         }
     }
@@ -369,9 +419,16 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
             setBoard(structuredClone(newNumber))
             setScore(s)
         }
+
         document.addEventListener("keydown", handleKeyDown, false)
+        document.addEventListener("touchstart", handleTouchStart, false)
+        document.addEventListener("touchmove", handleTouchMove, false)
+        document.addEventListener("touchend", handleTouchEnd, false)
         return ()=>{
             document.removeEventListener("keydown", handleKeyDown, false)
+            document.removeEventListener("touchstart", handleTouchStart, false)
+            document.removeEventListener("touchmove", handleTouchMove, false)
+            document.removeEventListener("touchend", handleTouchEnd, false)
         }
     }, [])
 
