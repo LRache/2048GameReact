@@ -7,3 +7,59 @@
     margin-top: 20px;
     position: relative;
 }
+
+.game-end-board {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 480px;
+    height: 480px;
+    border-radius: 10px;
+    background-color: #bbada0;
+
+    opacity: 0.5;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-end-board-center {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.game-end-text {
+    font-size: 80px;
+    font-weight: bold;
+    text-align: center;
+    user-select: none;
+    color: #29221a;
+}
+
+.game-end-button-bar {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.game-end-button {
+    font-family: "Yu Gothic UI", "Courier New", monospace;
+    font-weight: bold;
+    font-size: 20px;
+    color: white;
+    padding: 10px 15px;
+    background-color: #8c7b68;
+    float: right;
+    border: none;
+    border-radius: 5px;
+
+    margin-left: 20px;
+    margin-right: 20px;
+}

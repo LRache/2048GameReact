@@ -212,7 +212,20 @@ function move_right() {
 }
 
 function is_game_end() {
-    return false
+    for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 4; col++) {
+            if (numbers[row][col] === 0) {
+                return false
+            }
+            if (row + 1 < 4 && numbers[row][col] === numbers[row + 1][col]) {
+                return false
+            }
+            if (col + 1 < 4 && numbers[row][col] === numbers[row][col + 1]) {
+                return false
+            }
+        }
+    }
+    return true
 }
 
 function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
@@ -268,40 +281,6 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
         const t = []
         t.push(random_spawn_number())
         t.push(random_spawn_number())
-        // for (let i = 0; i < 4; i++) {
-        //     numbers[0][i] = 2
-        //     t.push({row: 0, col: i})
-        // }
-        // for (let i = 0; i < 4; i++) {
-        //     numbers[1][i] = 2
-        //     t.push({row: 1, col: i})
-        // }
-        // for (let i = 0; i < 4; i++) {
-        //     numbers[2][i] = 2
-        //     t.push({row: 2, col: i})
-        // }
-        // for (let i = 0; i < 4; i++) {
-        //     numbers[3][i] = 2
-        //     t.push({row: 3, col: i})
-        // }
-        // let x = 1
-        // for (let r = 0; r < 4; r ++) {
-        //     if (r % 2 === 0) {
-        //         for (let c = 0; c < 4; c++) {
-        //             t.push({row: r, col: c})
-        //             numbers[r][c] = Math.pow(2, x)
-        //             x++
-        //         }
-        //     }
-        //     else {
-        //         for (let c = 3; c >= 0; c--) {
-        //             t.push({row: r, col: c})
-        //             numbers[r][c] = Math.pow(2, x)
-        //             x++
-        //         }
-        //     }
-        // }
-        // numbers[0][0] = 4
         spawnAnimationReady = t;
 
         setBoard(gen_clean_board())
@@ -325,6 +304,15 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
         setScore(score.current + incScore)
     }
 
+    function undo() {
+        if (undoStack.current.length !== 0) {
+            const [oldBoard, oldScore] = undoStack.current.pop()
+            setBoard((_) => oldBoard)
+            numbers = oldBoard
+            setScore(oldScore)
+        }
+    }
+
     function handleKeyDown(event) {
         const mapMove = new Map([
             ["ArrowUp"   , move_up   ],
@@ -340,12 +328,7 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
         if (keys.includes(event.key)) {
             do_move(mapMove.get(event.key))
         } else if (event.key === "z") {
-            if (undoStack.current.length !== 0) {
-                const [oldBoard, oldScore] = undoStack.current.pop()
-                setBoard((_) => oldBoard)
-                numbers = oldBoard
-                setScore(oldScore)
-            }
+            undo()
         }
     }
 
@@ -509,11 +492,23 @@ function GameBoard({newGameTriggerred, onNewGameFinished, onSetScore}) {
         )
     })
 
+    const gameEnd = is_game_end()
+
     return (
         <div className="game-board">
             {blocks}
             {moveBlocks}
             {spawnBlocks}
+            {gameEnd && <div className="game-end-board" />}
+            {gameEnd &&
+                <div className="game-end-board-center">
+                    <div className="game-end-text">Game Over</div>
+                    <div className="game-end-button-bar">
+                        <button className="game-end-button" onClick={undo}>Undo</button>
+                        <button className="game-end-button" onClick={new_game}>New Game</button>
+                    </div>
+                </div>
+            }
         </div>
     )
 }
